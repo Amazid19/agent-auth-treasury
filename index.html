@@ -131,8 +131,8 @@
       "function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4)"
     ];
 
-    // Arc Testnet Configuration Parameter
-    const ARC_CHAIN_ID = "0x1271"; // HEX string parameter for Arc Testnet ID (4721)
+    // Standard Arc Testnet Chain Config
+    const ARC_CHAIN_ID = "0x1271"; // 4721 in Hex
 
     let isConnected = false;
     let isMinted = false;
@@ -147,7 +147,6 @@
       });
     }
 
-    // 🔄 Auto-Switch Network to Arc Testnet Function
     async function switchToArcNetwork() {
       if (!window.ethereum) return;
       try {
@@ -156,8 +155,8 @@
           params: [{ chainId: ARC_CHAIN_ID }],
         });
       } catch (switchError) {
-        // 4902 error code means the chain has not been added to MetaMask/Bitget
-        if (switchError.code === 4902) {
+        // Handle error code 4902 (Chain not added yet) or fallback
+        if (switchError.code === 4902 || switchError.code === -32603) {
           try {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
@@ -165,18 +164,17 @@
                 {
                   chainId: ARC_CHAIN_ID,
                   chainName: 'Arc Testnet',
-                  rpcUrls: ['https://rpc.testnet.arc.network'], 
+                  rpcUrls: ['https://rpc.testnet.arc.network'],
                   nativeCurrency: {
                     name: 'Arc ETH',
                     symbol: 'ETH',
                     decimals: 18,
-                  },
-                  blockExplorerUrls: ['https://explorer.testnet.arc.network'],
+                  }
                 },
               ],
             });
           } catch (addError) {
-            console.error("Network add error:", addError);
+            console.warn("User rejected or network already exists:", addError);
           }
         }
       }
@@ -201,10 +199,10 @@
     async function connectWallet() {
       if (window.ethereum) {
         try {
-          await switchToArcNetwork(); // Auto Switch Arc Network On Connect
           const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
           if (accounts.length > 0) {
             updateUIConnected(accounts[0]);
+            await switchToArcNetwork();
           }
         } catch (err) {
           console.error(err);
@@ -283,16 +281,13 @@
       const statusElem = document.getElementById("mintStatus");
       
       mintBtn.disabled = true;
-      mintBtn.innerText = "Confirming Network & Mint...";
-      statusElem.innerText = "Switching to Arc Testnet...";
+      mintBtn.innerText = "Confirming Transaction...";
+      statusElem.innerText = "Check your wallet to confirm mint...";
 
       try {
-        await switchToArcNetwork(); // Ensure Arc Network Before Mint
-
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         
-        statusElem.innerText = "Please confirm transaction in wallet...";
         const tx = await signer.sendTransaction({
           to: contractAddress,
           value: 0
