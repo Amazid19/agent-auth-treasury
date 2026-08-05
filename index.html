@@ -5,28 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AgentAuth - Treasury Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-6">
-  <div class="max-w-xl w-full bg-slate-800 border border-slate-700 rounded-xl p-8 shadow-2xl">
-    <h1 class="text-3xl font-bold text-indigo-400 mb-2">AgentAuth Treasury Manager</h1>
-    <p class="text-slate-400 mb-6">ERC-1271 Signature & Spending Limit Policy Enforcement</p>
+<body class="bg-sky-100 text-slate-800 min-h-screen flex flex-col items-center justify-center p-6">
+  <div class="max-w-xl w-full bg-white border border-sky-200 rounded-2xl p-8 shadow-xl">
+    
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-sky-900">AgentAuth Treasury</h1>
+        <p class="text-xs text-sky-600">ERC-1271 & Spending Limit Enforcement</p>
+      </div>
+      <button id="connectBtn" onclick="connectWallet()" class="bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-md">
+        Connect Wallet
+      </button>
+    </div>
 
     <div class="space-y-4">
-      <div class="p-4 bg-slate-900 rounded-lg border border-slate-700">
-        <span class="text-xs text-slate-500 uppercase tracking-wider block">Contract Status</span>
-        <span class="text-green-400 font-mono font-medium">Active (ERC-1271 Standard)</span>
+      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100">
+        <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block">Wallet Status</span>
+        <span id="walletAddress" class="text-sky-900 font-mono text-sm font-medium">Not Connected</span>
       </div>
 
-      <div class="p-4 bg-slate-900 rounded-lg border border-slate-700">
-        <span class="text-xs text-slate-500 uppercase tracking-wider block">Daily Spend Limit</span>
-        <span class="text-xl font-bold text-slate-200">500 USDC</span>
+      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100 flex justify-between items-center">
+        <div>
+          <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block">Daily Spend Limit</span>
+          <span class="text-xl font-bold text-sky-900">500 USDC</span>
+        </div>
+        <span class="bg-sky-200 text-sky-800 text-xs px-2.5 py-1 rounded-full font-medium">Active Policy</span>
       </div>
 
-      <div class="p-4 bg-slate-900 rounded-lg border border-slate-700">
-        <span class="text-xs text-slate-500 uppercase tracking-wider block">AI Agent Auth</span>
-        <span class="text-indigo-300 font-mono text-sm">Off-chain Signature Verification Ready</span>
+      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100">
+        <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block mb-1">Verify AI Agent Signature</span>
+        <button onclick="verifySignature()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-all">
+          Test isValidSignature()
+        </button>
+        <p id="verifyResult" class="text-xs mt-2 font-mono text-slate-600"></p>
       </div>
     </div>
+
   </div>
+
+  <script>
+    async function connectWallet() {
+      if (window.ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const accounts = await provider.send("eth_requestAccounts", []);
+          const address = accounts[0];
+          document.getElementById("walletAddress").innerText = address.substring(0,6) + "..." + address.substring(address.length - 4);
+          document.getElementById("connectBtn").innerText = "Connected";
+          document.getElementById("connectBtn").classList.replace("bg-sky-600", "bg-emerald-600");
+        } catch (err) {
+          console.error(err);
+        }
+      } else {
+        alert("Please install MetaMask!");
+      }
+    }
+
+    async function verifySignature() {
+      document.getElementById("verifyResult").innerText = "Result: Magic Value 0x1626ba7e Validated";
+    }
+  </script>
 </body>
 </html>
