@@ -9,16 +9,15 @@
   <style>
     .blur-overlay {
       backdrop-filter: blur(8px);
-      background-color: rgba(15, 23, 42, 0.6);
+      background-color: rgba(15, 23, 42, 0.7);
     }
   </style>
 </head>
 <body class="bg-sky-100 text-slate-800 min-h-screen flex items-center justify-center p-6">
   
-  <!-- Main Grid Container: 2 Identical Cards Side-by-Side -->
   <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
     
-    <!-- CARD 1: Treasury Manager & Verification -->
+    <!-- CARD 1: Treasury Manager -->
     <div class="bg-white border border-sky-200 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
       <div>
         <div class="flex justify-between items-center mb-6">
@@ -66,10 +65,10 @@
       </div>
     </div>
 
-    <!-- CARD 2: Project Access NFT Badge (Blur State until tested) -->
+    <!-- CARD 2: Project Access NFT Badge -->
     <div class="relative bg-white border border-sky-200 rounded-2xl p-6 shadow-xl flex flex-col justify-between overflow-hidden">
       
-      <!-- BLUR OVERLAY (Visible until test passed) -->
+      <!-- BLUR OVERLAY -->
       <div id="nftBlurOverlay" class="absolute inset-0 blur-overlay flex flex-col items-center justify-center p-6 text-center z-10 transition-all duration-500">
         <div class="bg-slate-900/80 p-3 rounded-full mb-2 text-sky-400">
           🔒
@@ -82,19 +81,15 @@
       <div>
         <div class="flex justify-between items-center mb-4">
           <div>
-            <h2 class="text-xl font-bold text-sky-900">Project Access Badge</h2>
-            <p class="text-xs text-sky-600">On-Chain Proof of Authorization</p>
+            <h2 id="displayNftName" class="text-xl font-bold text-sky-900">AgentAuth Pass</h2>
+            <p id="displayNftDesc" class="text-xs text-sky-600">Arc Testnet Badge</p>
           </div>
           <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full">FREE MINT</span>
         </div>
 
-        <!-- NFT Badge Preview Box -->
-        <div class="my-4 bg-gradient-to-br from-indigo-900 via-sky-900 to-slate-900 rounded-xl p-6 text-center text-white shadow-inner flex flex-col items-center justify-center border border-indigo-500/30">
-          <div class="w-16 h-16 rounded-full bg-sky-500/20 border border-sky-400/50 flex items-center justify-center text-2xl mb-2 shadow-lg">
-            🛡️
-          </div>
-          <h3 class="font-bold text-sm text-sky-200">AgentAuth Authorized</h3>
-          <p class="text-[10px] text-slate-400 mt-0.5">Arc Testnet Treasury Pass</p>
+        <div class="my-4 bg-slate-900 rounded-xl p-4 text-center text-white shadow-inner flex flex-col items-center justify-center border border-sky-500/30">
+          <img id="displayNftImage" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80" alt="NFT Preview" class="w-24 h-24 object-cover rounded-lg mb-2 border border-sky-400/50 shadow-md" />
+          <h3 id="displayNftTitle" class="font-bold text-xs text-sky-200">AgentAuth Authorized</h3>
         </div>
 
         <div class="space-y-2 text-xs">
@@ -121,13 +116,25 @@
   </div>
 
   <script>
+    const nftName = "AgentAuth Pass"; 
+    const nftTitle = "AgentAuth Authorized Pass"; 
+    const nftDescription = "Official Arc Testnet Badge"; 
+    const nftImageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80"; 
+
+    document.getElementById("displayNftName").innerText = nftName;
+    document.getElementById("displayNftTitle").innerText = nftTitle;
+    document.getElementById("displayNftDesc").innerText = nftDescription;
+    document.getElementById("displayNftImage").src = nftImageUrl;
+
     const contractAddress = "0xf8e81D47203A594245E36C48e151709F0C19fBe8";
     const abi = [
       "function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4)"
     ];
 
+    // Arc Testnet Configuration Parameter
+    const ARC_CHAIN_ID = "0x1271"; // HEX string parameter for Arc Testnet ID (4721)
+
     let isConnected = false;
-    let isTestCompleted = false;
     let isMinted = false;
 
     if (window.ethereum) {
@@ -138,6 +145,41 @@
           disconnectWallet();
         }
       });
+    }
+
+    // 🔄 Auto-Switch Network to Arc Testnet Function
+    async function switchToArcNetwork() {
+      if (!window.ethereum) return;
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: ARC_CHAIN_ID }],
+        });
+      } catch (switchError) {
+        // 4902 error code means the chain has not been added to MetaMask/Bitget
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [
+                {
+                  chainId: ARC_CHAIN_ID,
+                  chainName: 'Arc Testnet',
+                  rpcUrls: ['https://rpc.testnet.arc.network'], 
+                  nativeCurrency: {
+                    name: 'Arc ETH',
+                    symbol: 'ETH',
+                    decimals: 18,
+                  },
+                  blockExplorerUrls: ['https://explorer.testnet.arc.network'],
+                },
+              ],
+            });
+          } catch (addError) {
+            console.error("Network add error:", addError);
+          }
+        }
+      }
     }
 
     function updateUIConnected(address) {
@@ -159,6 +201,7 @@
     async function connectWallet() {
       if (window.ethereum) {
         try {
+          await switchToArcNetwork(); // Auto Switch Arc Network On Connect
           const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
           if (accounts.length > 0) {
             updateUIConnected(accounts[0]);
@@ -214,9 +257,6 @@
       }
 
       resultElem.innerText = "Magic Value 0x1626ba7e Validated!";
-      
-      // Unlock NFT Minting Card
-      isTestCompleted = true;
       unlockNFTCard();
     }
 
@@ -243,14 +283,16 @@
       const statusElem = document.getElementById("mintStatus");
       
       mintBtn.disabled = true;
-      mintBtn.innerText = "Confirming Transaction...";
-      statusElem.innerText = "Sending Arc Testnet Mint Request...";
+      mintBtn.innerText = "Confirming Network & Mint...";
+      statusElem.innerText = "Switching to Arc Testnet...";
 
       try {
-        // Send zero value transaction to trigger wallet gas confirmation
+        await switchToArcNetwork(); // Ensure Arc Network Before Mint
+
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         
+        statusElem.innerText = "Please confirm transaction in wallet...";
         const tx = await signer.sendTransaction({
           to: contractAddress,
           value: 0
