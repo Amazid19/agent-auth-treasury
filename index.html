@@ -13,8 +13,48 @@
     }
   </style>
 </head>
-<body class="bg-sky-100 text-slate-800 min-h-screen flex items-center justify-center p-6">
-  
+<body class="bg-sky-100 text-slate-800 min-h-screen flex items-center justify-center p-6 relative">
+
+  <!-- WALLET SELECTION MODAL -->
+  <div id="walletModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-sky-100 relative animate-in fade-in zoom-in duration-200">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-sky-900 text-base">Select Your Wallet</h3>
+        <button onclick="closeWalletModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-500 mb-4">Choose how you want to connect to AgentAuth Treasury:</p>
+      
+      <div class="space-y-3">
+        <!-- Bitget Button -->
+        <button onclick="connectSpecificWallet('bitget')" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-sky-500 hover:bg-sky-50 transition-all group">
+          <div class="flex items-center space-x-3">
+            <span class="text-lg">🟦</span>
+            <span class="font-semibold text-xs text-slate-800 group-hover:text-sky-900">Bitget Wallet</span>
+          </div>
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Detected</span>
+        </button>
+
+        <!-- MetaMask Button -->
+        <button onclick="connectSpecificWallet('metamask')" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-sky-500 hover:bg-sky-50 transition-all group">
+          <div class="flex items-center space-x-3">
+            <span class="text-lg">🦊</span>
+            <span class="font-semibold text-xs text-slate-800 group-hover:text-sky-900">MetaMask</span>
+          </div>
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Detected</span>
+        </button>
+
+        <!-- Other EVM Wallet Button -->
+        <button onclick="connectSpecificWallet('injected')" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-sky-500 hover:bg-sky-50 transition-all group">
+          <div class="flex items-center space-x-3">
+            <span class="text-lg">🌐</span>
+            <span class="font-semibold text-xs text-slate-800 group-hover:text-sky-900">Browser / Other Wallet</span>
+          </div>
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Standard</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
     
     <!-- CARD 1: Treasury Manager -->
@@ -25,7 +65,7 @@
             <h1 class="text-xl font-bold text-sky-900">AgentAuth Treasury</h1>
             <p class="text-xs text-sky-600">ERC-1271 & Spending Limit Enforcement</p>
           </div>
-          <button id="connectBtn" onclick="handleWalletAction()" class="bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs px-3 py-2 rounded-xl transition-all shadow-md">
+          <button id="connectBtn" onclick="openWalletModal()" class="bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs px-3 py-2 rounded-xl transition-all shadow-md">
             Connect Wallet
           </button>
         </div>
@@ -70,9 +110,7 @@
       
       <!-- BLUR OVERLAY -->
       <div id="nftBlurOverlay" class="absolute inset-0 blur-overlay flex flex-col items-center justify-center p-6 text-center z-10 transition-all duration-500">
-        <div class="bg-slate-900/80 p-3 rounded-full mb-2 text-sky-400">
-          🔒
-        </div>
+        <div class="bg-slate-900/80 p-3 rounded-full mb-2 text-sky-400">🔒</div>
         <h3 class="text-white font-bold text-sm">Badge Locked</h3>
         <p class="text-slate-300 text-xs mt-1 max-w-[200px]">Run <b>Test isValidSignature()</b> first to unlock your Access Badge.</p>
       </div>
@@ -98,8 +136,8 @@
             <span class="font-semibold text-emerald-600">0.00 ETH (Gas Only)</span>
           </div>
           <div class="flex justify-between text-slate-600 border-b pb-1">
-            <span>Limit:</span>
-            <span class="font-semibold text-slate-800">1 NFT per Wallet</span>
+            <span>Network:</span>
+            <span class="font-semibold text-sky-600">Arc Testnet</span>
           </div>
         </div>
       </div>
@@ -131,50 +169,82 @@
       "function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4)"
     ];
 
-    // Standard Arc Testnet Chain Config
-    const ARC_CHAIN_ID = "0x1271"; // 4721 in Hex
+    // Arc Testnet Configuration (Chain ID: 4721 -> Hex: 0x1271)
+    const ARC_CHAIN_PARAMS = {
+      chainId: "0x1271",
+      chainName: "Arc Testnet",
+      rpcUrls: ["https://rpc.testnet.arc.network"],
+      nativeCurrency: { name: "Arc ETH", symbol: "ETH", decimals: 18 },
+      blockExplorerUrls: ["https://explorer.testnet.arc.network"]
+    };
 
+    let selectedProvider = null;
     let isConnected = false;
     let isMinted = false;
 
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length > 0) {
-          updateUIConnected(accounts[0]);
-        } else {
-          disconnectWallet();
-        }
-      });
+    function openWalletModal() {
+      if (isConnected) {
+        disconnectWallet();
+      } else {
+        document.getElementById("walletModal").classList.remove("hidden");
+      }
     }
 
-    async function switchToArcNetwork() {
-      if (!window.ethereum) return;
+    function closeWalletModal() {
+      document.getElementById("walletModal").classList.add("hidden");
+    }
+
+    async function connectSpecificWallet(type) {
+      closeWalletModal();
+
+      if (type === 'bitget') {
+        selectedProvider = window.bitgetWallet?.ethereum || window.bitkeep?.ethereum || window.ethereum;
+      } else if (type === 'metamask') {
+        if (window.ethereum?.providers) {
+          selectedProvider = window.ethereum.providers.find(p => p.isMetaMask);
+        } else if (window.ethereum?.isMetaMask) {
+          selectedProvider = window.ethereum;
+        } else {
+          selectedProvider = window.ethereum;
+        }
+      } else {
+        selectedProvider = window.ethereum;
+      }
+
+      if (!selectedProvider) {
+        alert("Selected wallet extension not found! Please install or enable it.");
+        return;
+      }
+
       try {
-        await window.ethereum.request({
+        const accounts = await selectedProvider.request({ method: "eth_requestAccounts" });
+        if (accounts.length > 0) {
+          updateUIConnected(accounts[0]);
+          await ensureArcNetwork();
+        }
+      } catch (err) {
+        console.error("Wallet connection failed:", err);
+      }
+    }
+
+    async function ensureArcNetwork() {
+      if (!selectedProvider) selectedProvider = window.ethereum;
+      if (!selectedProvider) return;
+
+      try {
+        await selectedProvider.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: ARC_CHAIN_ID }],
+          params: [{ chainId: ARC_CHAIN_PARAMS.chainId }],
         });
       } catch (switchError) {
-        // Handle error code 4902 (Chain not added yet) or fallback
         if (switchError.code === 4902 || switchError.code === -32603) {
           try {
-            await window.ethereum.request({
+            await selectedProvider.request({
               method: 'wallet_addEthereumChain',
-              params: [
-                {
-                  chainId: ARC_CHAIN_ID,
-                  chainName: 'Arc Testnet',
-                  rpcUrls: ['https://rpc.testnet.arc.network'],
-                  nativeCurrency: {
-                    name: 'Arc ETH',
-                    symbol: 'ETH',
-                    decimals: 18,
-                  }
-                },
-              ],
+              params: [ARC_CHAIN_PARAMS],
             });
           } catch (addError) {
-            console.warn("User rejected or network already exists:", addError);
+            console.error("Failed to add Arc Testnet:", addError);
           }
         }
       }
@@ -188,38 +258,15 @@
       isConnected = true;
     }
 
-    async function handleWalletAction() {
-      if (!isConnected) {
-        await connectWallet();
-      } else {
-        disconnectWallet();
-      }
-    }
-
-    async function connectWallet() {
-      if (window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-          if (accounts.length > 0) {
-            updateUIConnected(accounts[0]);
-            await switchToArcNetwork();
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      } else {
-        alert("Please install MetaMask or Bitget Wallet!");
-      }
-    }
-
     async function switchAccount() {
-      if (window.ethereum) {
+      if (!selectedProvider) selectedProvider = window.ethereum;
+      if (selectedProvider) {
         try {
-          await window.ethereum.request({
+          await selectedProvider.request({
             method: "wallet_requestPermissions",
             params: [{ eth_accounts: {} }]
           });
-          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+          const accounts = await selectedProvider.request({ method: "eth_requestAccounts" });
           if (accounts.length > 0) {
             updateUIConnected(accounts[0]);
           }
@@ -236,6 +283,7 @@
       document.getElementById("switchBtn").classList.add("hidden");
       document.getElementById("verifyResult").innerText = "";
       isConnected = false;
+      selectedProvider = null;
     }
 
     async function verifySignature() {
@@ -243,8 +291,9 @@
       resultElem.innerText = "Checking magic value...";
 
       try {
-        if (window.ethereum) {
-          const provider = new ethers.BrowserProvider(window.ethereum);
+        const providerToUse = selectedProvider || window.ethereum;
+        if (providerToUse) {
+          const provider = new ethers.BrowserProvider(providerToUse);
           const contract = new ethers.Contract(contractAddress, abi, provider);
           const dummyHash = "0x" + "0".repeat(64);
           const dummySig = "0x";
@@ -272,7 +321,7 @@
 
     async function mintBadge() {
       if (!isConnected) {
-        alert("Please connect your wallet first!");
+        openWalletModal();
         return;
       }
       if (isMinted) return;
@@ -281,13 +330,20 @@
       const statusElem = document.getElementById("mintStatus");
       
       mintBtn.disabled = true;
-      mintBtn.innerText = "Confirming Transaction...";
-      statusElem.innerText = "Check your wallet to confirm mint...";
+      mintBtn.innerText = "Switching to Arc Testnet...";
+      statusElem.innerText = "Ensuring network connection...";
 
       try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        // Force Switch to Arc Testnet before tx
+        await ensureArcNetwork();
+
+        const providerToUse = selectedProvider || window.ethereum;
+        const provider = new ethers.BrowserProvider(providerToUse);
         const signer = await provider.getSigner();
         
+        statusElem.innerText = "Confirm transaction in your wallet...";
+        
+        // Explicitly targeted Arc Testnet
         const tx = await signer.sendTransaction({
           to: contractAddress,
           value: 0
@@ -302,7 +358,7 @@
         statusElem.innerText = "NFT Badge successfully minted!";
       } catch (err) {
         console.error(err);
-        statusElem.innerText = "Transaction canceled or failed.";
+        statusElem.innerText = "Transaction canceled or wrong network.";
         mintBtn.disabled = false;
         mintBtn.innerText = "Mint Access Badge (Gas Only)";
       }
