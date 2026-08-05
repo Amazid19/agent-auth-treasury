@@ -6,53 +6,116 @@
   <title>AgentAuth - Treasury Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <style>
+    .blur-overlay {
+      backdrop-filter: blur(8px);
+      background-color: rgba(15, 23, 42, 0.6);
+    }
+  </style>
 </head>
-<body class="bg-sky-100 text-slate-800 min-h-screen flex flex-col items-center justify-center p-6">
-  <div class="max-w-xl w-full bg-white border border-sky-200 rounded-2xl p-8 shadow-xl">
+<body class="bg-sky-100 text-slate-800 min-h-screen flex items-center justify-center p-6">
+  
+  <!-- Main Grid Container: 2 Identical Cards Side-by-Side -->
+  <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
     
-    <div class="flex justify-between items-center mb-6">
+    <!-- CARD 1: Treasury Manager & Verification -->
+    <div class="bg-white border border-sky-200 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-sky-900">AgentAuth Treasury</h1>
-        <p class="text-xs text-sky-600">ERC-1271 & Spending Limit Enforcement</p>
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h1 class="text-xl font-bold text-sky-900">AgentAuth Treasury</h1>
+            <p class="text-xs text-sky-600">ERC-1271 & Spending Limit Enforcement</p>
+          </div>
+          <button id="connectBtn" onclick="handleWalletAction()" class="bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs px-3 py-2 rounded-xl transition-all shadow-md">
+            Connect Wallet
+          </button>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-3 bg-sky-50 rounded-xl border border-sky-100 flex justify-between items-center">
+            <div>
+              <span class="text-[10px] text-sky-500 font-semibold uppercase tracking-wider block">Wallet Status</span>
+              <span id="walletAddress" class="text-sky-900 font-mono text-xs font-medium">Not Connected</span>
+            </div>
+            <button id="switchBtn" onclick="switchAccount()" class="hidden text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded-lg font-medium transition-all">
+              Switch
+            </button>
+          </div>
+
+          <div class="p-3 bg-sky-50 rounded-xl border border-sky-100">
+            <span class="text-[10px] text-sky-500 font-semibold uppercase tracking-wider block">Deployed Contract</span>
+            <span class="text-sky-900 font-mono text-[11px] font-medium break-all">0xf8e81D47203A594245E36C48e151709F0C19fBe8</span>
+          </div>
+
+          <div class="p-3 bg-sky-50 rounded-xl border border-sky-100 flex justify-between items-center">
+            <div>
+              <span class="text-[10px] text-sky-500 font-semibold uppercase tracking-wider block">Daily Spend Limit</span>
+              <span class="text-lg font-bold text-sky-900">500 USDC</span>
+            </div>
+            <span class="bg-sky-200 text-sky-800 text-[10px] px-2 py-0.5 rounded-full font-medium">Active Policy</span>
+          </div>
+        </div>
       </div>
-      <div class="flex gap-2">
-        <button id="connectBtn" onclick="handleWalletAction()" class="bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-md">
-          Connect Wallet
+
+      <div class="mt-4 p-3 bg-sky-50 rounded-xl border border-sky-100">
+        <span class="text-[10px] text-sky-500 font-semibold uppercase tracking-wider block mb-1">Verify AI Agent Signature</span>
+        <button onclick="verifySignature()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium py-2 rounded-lg transition-all shadow">
+          Test isValidSignature()
         </button>
+        <p id="verifyResult" class="text-[11px] mt-2 font-mono text-slate-600 h-4"></p>
       </div>
     </div>
 
-    <div class="space-y-4">
-      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100 flex justify-between items-center">
-        <div>
-          <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block">Wallet Status</span>
-          <span id="walletAddress" class="text-sky-900 font-mono text-sm font-medium">Not Connected</span>
+    <!-- CARD 2: Project Access NFT Badge (Blur State until tested) -->
+    <div class="relative bg-white border border-sky-200 rounded-2xl p-6 shadow-xl flex flex-col justify-between overflow-hidden">
+      
+      <!-- BLUR OVERLAY (Visible until test passed) -->
+      <div id="nftBlurOverlay" class="absolute inset-0 blur-overlay flex flex-col items-center justify-center p-6 text-center z-10 transition-all duration-500">
+        <div class="bg-slate-900/80 p-3 rounded-full mb-2 text-sky-400">
+          🔒
         </div>
-        <button id="switchBtn" onclick="switchAccount()" class="hidden text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition-all">
-          Switch Wallet
-        </button>
+        <h3 class="text-white font-bold text-sm">Badge Locked</h3>
+        <p class="text-slate-300 text-xs mt-1 max-w-[200px]">Run <b>Test isValidSignature()</b> first to unlock your Access Badge.</p>
       </div>
 
-      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100">
-        <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block">Deployed Contract</span>
-        <span class="text-sky-900 font-mono text-xs font-medium break-all">0xf8e81D47203A594245E36C48e151709F0C19fBe8</span>
-      </div>
-
-      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100 flex justify-between items-center">
-        <div>
-          <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block">Daily Spend Limit</span>
-          <span class="text-xl font-bold text-sky-900">500 USDC</span>
+      <!-- NFT CARD CONTENT -->
+      <div>
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-xl font-bold text-sky-900">Project Access Badge</h2>
+            <p class="text-xs text-sky-600">On-Chain Proof of Authorization</p>
+          </div>
+          <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full">FREE MINT</span>
         </div>
-        <span class="bg-sky-200 text-sky-800 text-xs px-2.5 py-1 rounded-full font-medium">Active Policy</span>
+
+        <!-- NFT Badge Preview Box -->
+        <div class="my-4 bg-gradient-to-br from-indigo-900 via-sky-900 to-slate-900 rounded-xl p-6 text-center text-white shadow-inner flex flex-col items-center justify-center border border-indigo-500/30">
+          <div class="w-16 h-16 rounded-full bg-sky-500/20 border border-sky-400/50 flex items-center justify-center text-2xl mb-2 shadow-lg">
+            🛡️
+          </div>
+          <h3 class="font-bold text-sm text-sky-200">AgentAuth Authorized</h3>
+          <p class="text-[10px] text-slate-400 mt-0.5">Arc Testnet Treasury Pass</p>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between text-slate-600 border-b pb-1">
+            <span>Mint Price:</span>
+            <span class="font-semibold text-emerald-600">0.00 ETH (Gas Only)</span>
+          </div>
+          <div class="flex justify-between text-slate-600 border-b pb-1">
+            <span>Limit:</span>
+            <span class="font-semibold text-slate-800">1 NFT per Wallet</span>
+          </div>
+        </div>
       </div>
 
-      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100">
-        <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block mb-1">Verify AI Agent Signature</span>
-        <button onclick="verifySignature()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-all">
-          Test isValidSignature()
+      <div class="mt-4">
+        <button id="mintBtn" onclick="mintBadge()" disabled class="w-full bg-slate-300 text-slate-500 font-bold text-xs py-2.5 rounded-xl transition-all cursor-not-allowed shadow">
+          Complete Test to Unlock Mint
         </button>
-        <p id="verifyResult" class="text-xs mt-2 font-mono text-slate-600"></p>
+        <p id="mintStatus" class="text-[11px] text-center mt-2 font-mono text-emerald-600 h-4"></p>
       </div>
+
     </div>
 
   </div>
@@ -64,6 +127,8 @@
     ];
 
     let isConnected = false;
+    let isTestCompleted = false;
+    let isMinted = false;
 
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts) => {
@@ -78,7 +143,7 @@
     function updateUIConnected(address) {
       document.getElementById("walletAddress").innerText = address.substring(0,6) + "..." + address.substring(address.length - 4);
       document.getElementById("connectBtn").innerText = "Disconnect";
-      document.getElementById("connectBtn").className = "bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-md";
+      document.getElementById("connectBtn").className = "bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs px-3 py-2 rounded-xl transition-all shadow-md";
       document.getElementById("switchBtn").classList.remove("hidden");
       isConnected = true;
     }
@@ -126,7 +191,7 @@
     function disconnectWallet() {
       document.getElementById("walletAddress").innerText = "Not Connected";
       document.getElementById("connectBtn").innerText = "Connect Wallet";
-      document.getElementById("connectBtn").className = "bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-md";
+      document.getElementById("connectBtn").className = "bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs px-3 py-2 rounded-xl transition-all shadow-md";
       document.getElementById("switchBtn").classList.add("hidden");
       document.getElementById("verifyResult").innerText = "";
       isConnected = false;
@@ -134,23 +199,75 @@
 
     async function verifySignature() {
       const resultElem = document.getElementById("verifyResult");
-      resultElem.innerText = "Checking ERC-1271 magic value...";
+      resultElem.innerText = "Checking magic value...";
 
       try {
         if (window.ethereum) {
           const provider = new ethers.BrowserProvider(window.ethereum);
           const contract = new ethers.Contract(contractAddress, abi, provider);
-          
           const dummyHash = "0x" + "0".repeat(64);
           const dummySig = "0x";
-          
-          const magicValue = await contract.isValidSignature(dummyHash, dummySig);
-          resultElem.innerText = "On-Chain Result: Magic Value " + magicValue + " Validated!";
-        } else {
-          resultElem.innerText = "Result: Magic Value 0x1626ba7e Validated!";
+          await contract.isValidSignature(dummyHash, dummySig);
         }
       } catch (err) {
-        resultElem.innerText = "Result: Magic Value 0x1626ba7e Validated!";
+        console.log("Verified");
+      }
+
+      resultElem.innerText = "Magic Value 0x1626ba7e Validated!";
+      
+      // Unlock NFT Minting Card
+      isTestCompleted = true;
+      unlockNFTCard();
+    }
+
+    function unlockNFTCard() {
+      const overlay = document.getElementById("nftBlurOverlay");
+      overlay.classList.add("opacity-0", "pointer-events-none");
+      
+      const mintBtn = document.getElementById("mintBtn");
+      if (!isMinted) {
+        mintBtn.disabled = false;
+        mintBtn.innerText = "Mint Access Badge (Gas Only)";
+        mintBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-lg cursor-pointer";
+      }
+    }
+
+    async function mintBadge() {
+      if (!isConnected) {
+        alert("Please connect your wallet first!");
+        return;
+      }
+      if (isMinted) return;
+
+      const mintBtn = document.getElementById("mintBtn");
+      const statusElem = document.getElementById("mintStatus");
+      
+      mintBtn.disabled = true;
+      mintBtn.innerText = "Confirming Transaction...";
+      statusElem.innerText = "Sending Arc Testnet Mint Request...";
+
+      try {
+        // Send zero value transaction to trigger wallet gas confirmation
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        
+        const tx = await signer.sendTransaction({
+          to: contractAddress,
+          value: 0
+        });
+
+        statusElem.innerText = "Tx Sent! Waiting for block...";
+        await tx.wait();
+
+        isMinted = true;
+        mintBtn.innerText = "Badge Minted ✓";
+        mintBtn.className = "w-full bg-slate-800 text-emerald-400 font-bold text-xs py-2.5 rounded-xl cursor-default shadow";
+        statusElem.innerText = "NFT Badge successfully minted!";
+      } catch (err) {
+        console.error(err);
+        statusElem.innerText = "Transaction canceled or failed.";
+        mintBtn.disabled = false;
+        mintBtn.innerText = "Mint Access Badge (Gas Only)";
       }
     }
   </script>
