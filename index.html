@@ -15,15 +15,22 @@
         <h1 class="text-2xl font-bold text-sky-900">AgentAuth Treasury</h1>
         <p class="text-xs text-sky-600">ERC-1271 & Spending Limit Enforcement</p>
       </div>
-      <button id="connectBtn" onclick="connectWallet()" class="bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-md">
-        Connect Wallet
-      </button>
+      <div class="flex gap-2">
+        <button id="connectBtn" onclick="handleWalletAction()" class="bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-md">
+          Connect Wallet
+        </button>
+      </div>
     </div>
 
     <div class="space-y-4">
-      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100">
-        <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block">Wallet Status</span>
-        <span id="walletAddress" class="text-sky-900 font-mono text-sm font-medium">Not Connected</span>
+      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100 flex justify-between items-center">
+        <div>
+          <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block">Wallet Status</span>
+          <span id="walletAddress" class="text-sky-900 font-mono text-sm font-medium">Not Connected</span>
+        </div>
+        <button id="switchBtn" onclick="switchAccount()" class="hidden text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition-all">
+          Switch Wallet
+        </button>
       </div>
 
       <div class="p-4 bg-sky-50 rounded-xl border border-sky-100">
@@ -56,15 +63,30 @@
       "function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4)"
     ];
 
+    let isConnected = false;
+
+    async function handleWalletAction() {
+      if (!isConnected) {
+        await connectWallet();
+      } else {
+        disconnectWallet();
+      }
+    }
+
     async function connectWallet() {
       if (window.ethereum) {
         try {
           const provider = new ethers.BrowserProvider(window.ethereum);
           const accounts = await provider.send("eth_requestAccounts", []);
           const address = accounts[0];
+          
           document.getElementById("walletAddress").innerText = address.substring(0,6) + "..." + address.substring(address.length - 4);
-          document.getElementById("connectBtn").innerText = "Connected";
-          document.getElementById("connectBtn").classList.replace("bg-sky-600", "bg-emerald-600");
+          document.getElementById("connectBtn").innerText = "Disconnect";
+          document.getElementById("connectBtn").classList.replace("bg-sky-600", "bg-rose-600");
+          document.getElementById("connectBtn").classList.replace("hover:bg-sky-700", "hover:bg-rose-700");
+          document.getElementById("switchBtn").classList.remove("hidden");
+          
+          isConnected = true;
         } catch (err) {
           console.error(err);
         }
@@ -73,20 +95,28 @@
       }
     }
 
-    async function verifySignature() {
-      document.getElementById("verifyResult").innerText = "Checking on-chain magic value...";
-      try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const contract = new ethers.Contract(contractAddress, abi, provider);
-        
-        const dummyHash = "0x" + "0".repeat(64);
-        const dummySig = "0x";
-        
-        const magicValue = await contract.isValidSignature(dummyHash, dummySig);
-        document.getElementById("verifyResult").innerText = "On-Chain Result: Magic Value " + magicValue + " Validated!";
-      } catch (err) {
-        document.getElementById("verifyResult").innerText = "Result: Magic Value 0x1626ba7e Validated!";
+    async function switchAccount() {
+      if (window.ethereum) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_requestPermissions",
+            params: [{ eth_accounts: {} }]
+          });
+          await connectWallet();
+        } catch (err) {
+          console.error(err);
+        }
       }
+    }
+
+    function disconnectWallet() {
+      document.getElementById("walletAddress").innerText = "Not Connected";
+      document.getElementById("connectBtn").innerText = "Connect Wallet";
+      document.getElementById("connectBtn").classList.replace("bg-rose-600", "bg-sky-600");
+      document.getElementById("connectBtn").classList.replace("hover:bg-rose-700", "hover:bg-sky-700");
+      document.getElementById("switchBtn").classList.add("hidden");
+      document.getElementById("verifyResult").innerText = "";
+      isConnected = false;
     }
   </script>
 </body>
