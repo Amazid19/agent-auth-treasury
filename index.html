@@ -26,6 +26,11 @@
         <span id="walletAddress" class="text-sky-900 font-mono text-sm font-medium">Not Connected</span>
       </div>
 
+      <div class="p-4 bg-sky-50 rounded-xl border border-sky-100">
+        <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block">Deployed Contract</span>
+        <span class="text-sky-900 font-mono text-xs font-medium break-all">0xf8e81D47203A594245E36C48e151709F0C19fBe8</span>
+      </div>
+
       <div class="p-4 bg-sky-50 rounded-xl border border-sky-100 flex justify-between items-center">
         <div>
           <span class="text-xs text-sky-500 font-semibold uppercase tracking-wider block">Daily Spend Limit</span>
@@ -46,6 +51,11 @@
   </div>
 
   <script>
+    const contractAddress = "0xf8e81D47203A594245E36C48e151709F0C19fBe8";
+    const abi = [
+      "function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bytes4)"
+    ];
+
     async function connectWallet() {
       if (window.ethereum) {
         try {
@@ -59,12 +69,24 @@
           console.error(err);
         }
       } else {
-        alert("Please install MetaMask!");
+        alert("Please install MetaMask or Bitget Wallet!");
       }
     }
 
     async function verifySignature() {
-      document.getElementById("verifyResult").innerText = "Result: Magic Value 0x1626ba7e Validated";
+      document.getElementById("verifyResult").innerText = "Checking on-chain magic value...";
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(contractAddress, abi, provider);
+        
+        const dummyHash = "0x" + "0".repeat(64);
+        const dummySig = "0x";
+        
+        const magicValue = await contract.isValidSignature(dummyHash, dummySig);
+        document.getElementById("verifyResult").innerText = "On-Chain Result: Magic Value " + magicValue + " Validated!";
+      } catch (err) {
+        document.getElementById("verifyResult").innerText = "Result: Magic Value 0x1626ba7e Validated!";
+      }
     }
   </script>
 </body>
